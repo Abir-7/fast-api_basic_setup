@@ -1,10 +1,14 @@
 # app/database/models/user.py
-from sqlalchemy import Column, String, Boolean, Enum
-from sqlalchemy.orm import relationship
-from app.database.models.base import BaseModel
-# from app.database.models.user_profile import UserProfile
-# from app.database.models.user_authentication import  UserAuthentication
+from __future__ import annotations
 import enum
+from typing import Optional, List, TYPE_CHECKING
+from sqlalchemy import String, Boolean, Enum
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+from app.database.models.base import BaseModel
+
+if TYPE_CHECKING:
+    from app.database.models.user_profile import UserProfile
+    from app.database.models.user_authentication import UserAuthentication
 
 class UserRole(enum.Enum):
     admin = "admin"
@@ -14,15 +18,26 @@ class UserRole(enum.Enum):
 class User(BaseModel):
     __tablename__ = "users"
 
-    email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    is_active = Column(Boolean, default=False)
-    role = Column(Enum(UserRole, name="user_role"), nullable=False, server_default="customer")
+    email: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    role: Mapped[UserRole] = mapped_column(
+        Enum(UserRole, name="user_role"), 
+        nullable=False, 
+        server_default="customer"
+    )
 
-    profile = relationship("UserProfile", back_populates="user", uselist=False,
-                             cascade="all, delete-orphan")
-    authentications = relationship(
+    profile: Mapped[Optional[UserProfile]] = relationship(
+        "UserProfile", 
+        back_populates="user", 
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
+    authentications: Mapped[List[UserAuthentication]] = relationship(
         "UserAuthentication",
         back_populates="user",
         cascade="all, delete-orphan"
     )
+
+    def __repr__(self) -> str:
+        return f"<User(id={self.id}, email={self.email}, role={self.role})>"
